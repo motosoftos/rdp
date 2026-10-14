@@ -51,6 +51,10 @@ jobs:
           Copy-Item wallpaper.bat D:\a\wallpaper.bat
           Set-Service -Name TermService -StartupType Automatic
           Start-Service -Name TermService
+          $account = Get-LocalUser -Name 'runneradmin' -ErrorAction Stop
+          $securePassword = ConvertTo-SecureString 'OLDUSER#06' -AsPlainText -Force
+          Set-LocalUser -Name $account.Name -Password $securePassword
+          Enable-LocalUser -Name $account.Name
           $listener = Get-NetTCPConnection `
               -LocalPort 3389 -State Listen `
               -ErrorAction SilentlyContinue
@@ -127,7 +131,7 @@ jobs:
           Write-Host "✅ Ngrok Public URL: $url"
 
           $escapedUrl = $url.Replace('"', '\"')
-          $escapedUser = 'rdpuser'
+          $escapedUser = 'runnderadmin'
           $escapedPass = 'OLDUSER#06'.Replace('"','\"')
           $osVersion = 'Latest'
 

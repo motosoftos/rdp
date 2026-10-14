@@ -49,6 +49,14 @@ jobs:
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
           Copy-Item wallpaper.bat D:\a\wallpaper.bat
+          Set-Service -Name TermService -StartupType Automatic
+          Start-Service -Name TermService
+          $listener = Get-NetTCPConnection `
+              -LocalPort 3389 -State Listen `
+              -ErrorAction SilentlyContinue
+          if (-not $listener) {
+              throw "RDP is not listening on port 3389."
+          }
 
       - name: 🚀 Start Ngrok + Configure RDP Tunnel
         shell: pwsh
@@ -115,7 +123,7 @@ jobs:
           Write-Host "✅ Ngrok Public URL: $url"
 
           $escapedUrl = $url.Replace('"', '\"')
-          $escapedUser = 'administrator'.Replace('"','\"')
+          $escapedUser = 'rdpuser'
           $escapedPass = 'OLDUSER#06'.Replace('"','\"')
           $osVersion = 'Latest'
 

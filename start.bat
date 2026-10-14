@@ -1,49 +1,40 @@
 @echo off
-
-REM set "NGROK_URL=%~1"
-REM if "%NGROK_URL%"=="" set "NGROK_URL=null"
-REM set "USERNAME=%~2"
-REM if "%USERNAME%"=="" set "USERNAME=runneradmin"
-REM set "PASSWORD=%~3"
-REM if "%PASSWORD%"=="" set "PASSWORD=OLDUSER-SER"
-
-:: set "NGROK_URL=%~1"
-:: if not defined NGROK_URL set "NGROK_URL=null"
-:: set "USERNAME=%~2"
-::if not defined USERNAME set "USERNAME=runneradmin"
-::set "PASSWORD=%~3"
-::if not defined PASSWORD set "PASSWORD=OLDUSER-SER"
-
-REM set "NGROK_URL=%~1" & if "%NGROK_URL%"=="" set "NGROK_URL=null"
-:: set "USERNAME=%~2" & if "%USERNAME%"=="" set "USERNAME=runneradmin"
-REM set "PASSWORD=%~3" & if "%PASSWORD%"=="" set "PASSWORD=OLDUSER-SER"
+setlocal EnableExtensions DisableDelayedExpansion
 
 set "NGROK_URL=%~1"
-if not defined NGROK_URL set "NGROK_URL=null"
-set "USERNAME=%~2"
-if not defined USERNAME set "USERNAME=runneradmin"
-set "PASSWORD=%~3"
-if not defined PASSWORD set "PASSWORD=OLDUSER-SER"
-set "OS_VERSION=%~4"
-if not defined OS_VERSION set "OS_VERSION=2019"
+set "RDP_USER=%~2"
+set "RDP_PASS=%~3"
 
-del /f "C:\Users\Public\Desktop\Epic Games Launcher.lnk" > out.txt 2>&1
-net config server /srvcomment:"Windows Server %OS_VERSION% By administrator" > out.txt 2>&1
-REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F > out.txt 2>&1
-REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /f /v Wallpaper /t REG_SZ /d D:\a\wallpaper.bat
-net user "%USERNAME%" "%PASSWORD%" /add > nul
-net localgroup administrators "%USERNAME%" /add >nul
-net user administrator /active:yes >nul
-net user installer /delete
-diskperf -Y >nul
-sc config Audiosrv start= auto >nul
-sc start audiosrv >nul
-ICACLS C:\Windows\Temp /grant "%USERNAME%" :F >nul
-ICACLS C:\Windows\installer /grant "%USERNAME%" :F >nul
-echo Successfully installed! If RDP is dead, rebuild again.
-echo Setup complete!
-echo Ngrok Tunnel URL/IP: "%NGROK_URL%"
-echo Username: "%USERNAME%"
-echo Password: "%PASSWORD%"
-echo You can now log in via RDP or terminal."
-ping -n 10 127.0.0.1 >nul
+if not defined RDP_USER set "RDP_USER=rdpuser"
+if not defined RDP_PASS (
+    echo ERROR: RDP password was not provided.
+    exit /b 2
+)
+
+REM Create the account, or reset its password if it exists.
+net user "%RDP_USER%" >nul 2>&1
+if errorlevel 1 (
+    net user "%RDP_USER%" "%RDP_PASS%" /add
+) else (
+    net user "%RDP_USER%" "%RDP_PASS%"
+)
+
+if errorlevel 1 (
+    echo ERROR: Failed to create or configure RDP user.
+    exit /b 1
+)
+
+REM Add the account to the local Administrators group.
+net localgroup Administrators "%RDP_USER%" /add >nul 2>&1
+
+REM Verify membership even if the account was already a member.
+net localgroup Administrators | findstr /i /c:"%RDP_USER%" >nul
+if errorlevel 1 (
+    echo ERROR: RDP user is not in the Administrators group.
+    exit /b 1
+)
+
+echo RDP account configured successfully.
+echo Ngrok endpoint: "%NGROK_URL%"
+echo Username: "%RDP_USER%"
+exit /b 0

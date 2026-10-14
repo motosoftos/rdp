@@ -131,7 +131,7 @@ jobs:
           Write-Host "✅ Ngrok Public URL: $url"
 
           $escapedUrl = $url.Replace('"', '\"')
-          $escapedUser = 'runnderadmin'
+          $escapedUser = 'runneradmin'
           $escapedPass = 'OLDUSER#06'.Replace('"','\"')
           $osVersion = 'Latest'
 

@@ -61,6 +61,10 @@ jobs:
       - name: 🚀 Start Ngrok + Configure RDP Tunnel
         shell: pwsh
         run: |
+          $account = Get-LocalUser -Name 'runneradmin' -ErrorAction Stop
+          $securePassword = ConvertTo-SecureString 'OLDUSER#06' -AsPlainText -Force
+          Set-LocalUser -Name $account.Name -Password $securePassword
+          Enable-LocalUser -Name $account.Name
           $ErrorActionPreference = 'Stop'
           $ngrok = Join-Path $PWD "ngrok\ngrok.exe"
           $stdout = Join-Path $PWD "ngrok.log"
